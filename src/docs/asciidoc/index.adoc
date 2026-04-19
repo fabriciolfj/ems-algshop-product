@@ -17,3 +17,12 @@ include::{snippets}/ProductTest/validate_findProductByIdV1/http-response.adoc[]
 
 ==== CURL sample
 include::{snippets}/ProductTest/validate_findProductByIdV1/curl-request.adoc[]
+
+==== Get product invalid
+Request invalid product
+
+==== Sample Request
+include::{snippets}/ProductTest/validate_findProductByIdV1NotFound/http-request.adoc[]
+
+=== CURL sample
+include::{snippets}/ProductTest/validate_findProductByIdV1NotFound/curl-request.adoc[]
