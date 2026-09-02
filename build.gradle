@@ -41,6 +41,7 @@ configurations {
 		extendsFrom annotationProcessor
 	}
 	asciidoctorExt
+	mockitoAgent
 }
 
 dependencies {
@@ -55,9 +56,13 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	mockitoAgent('org.mockito:mockito-core:5.14.2') {transitive = false}
+
 }
 
 dependencyManagement {
@@ -88,4 +93,45 @@ asciidoctor {
 	}
 	baseDirFollowsSourceFile()
 	outputDir = file("build/docs/asciidoc")
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	mockitoAgent
+}
+
+
+tasks.named('check') {
+	dependsOn(test, contractTest, integrationTest)
+}
+
+test {
+	filter {
+		excludeTestsMatching("*IT")
+	}
+	jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+}
+
+tasks.register('integrationTest', Test) {
+	description = 'Run integration tests.'
+	group = 'verification'
+	jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+
+	shouldRunAfter test
+
+	useJUnitPlatform()
+
+	testLogging {
+		events "passed"
+	}
+
+	filter {
+		includeTestsMatching "*IT"
+		excludeTestsMatching "*Test"
+	}
 }
