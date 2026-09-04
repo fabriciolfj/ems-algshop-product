@@ -1,8 +1,8 @@
 package com.algaworks.algashop.product.catalog.infrastructure.persistence.product;
 
 import com.algaworks.algashop.product.catalog.application.PageModel;
-import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductDetailOutput;
+import com.algaworks.algashop.product.catalog.application.product.query.ProductFilter;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductQueryService;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductSummaryOutput;
 import com.algaworks.algashop.product.catalog.application.utility.Mapper;
@@ -10,16 +10,29 @@ import com.algaworks.algashop.product.catalog.domain.model.product.Product;
 import com.algaworks.algashop.product.catalog.domain.model.product.ProductNotFoundException;
 import com.algaworks.algashop.product.catalog.domain.model.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.aggregation.AggregationExpressionCriteria;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ProductQueryServiceImpl implements ProductQueryService {
 
+    private static final String findWordRegex = "(?i)%s";
+
     private final ProductRepository productRepository;
     private final Mapper mapper;
+    private final MongoOperations mongoOperations;
 
     @Override
     public ProductDetailOutput findById(UUID productId) {
@@ -29,7 +42,109 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    public PageModel<ProductSummaryOutput> filter(Integer size, Integer number) {
-        return null;
+    public PageModel<ProductSummaryOutput> filter(final ProductFilter filter) {
+        final Query query = queryWith(filter);
+        long totalItens = mongoOperations.count(query, Product.class);
+        Sort sort = sortWith(filter);
+
+        final var request = PageRequest.of(filter.getPage(), filter.getSize(), sort);
+        final var pagedQuery = query.with(request);
+
+        final List<Product> products;
+        int totalPages = 0;
+        if (totalItens > 0) {
+            products = mongoOperations.find(pagedQuery, Product.class);
+            totalPages = (int) Math.ceil((double) totalItens / request.getPageSize());
+        } else {
+            products = new ArrayList<>();
+        }
+
+        var summary = products.stream().map(p -> mapper.convert(p, ProductSummaryOutput.class))
+                .toList();
+
+        return PageModel.<ProductSummaryOutput>builder()
+                .content(summary)
+                .number(request.getPageNumber())
+                .size(request.getPageSize())
+                .totalElements(totalItens)
+                .totalPages(totalPages)
+                .build();
+    }
+
+    private Sort sortWith(final ProductFilter filter) {
+        return Sort.by(filter.getSortDirectionOrDefault(), filter.getSortByPropertyOrDefault().getPropertyName());
+    }
+
+    private Query queryWith(final ProductFilter filter) {
+        final Query query = new Query();
+
+        if (filter.getEnabled() != null) {
+            query.addCriteria(Criteria.where("enabled").is(filter.getEnabled()));
+        }
+
+        if (filter.getAddedAtFrom() != null && filter.getAddedAtTo() != null) {
+            query.addCriteria(Criteria.where("addedAt")
+                    .gte(filter.getAddedAtFrom())
+                    .lte(filter.getAddedAtTo())
+            );
+        } else {
+
+            if (filter.getAddedAtFrom() != null) {
+                query.addCriteria(Criteria.where("addedAt").gte(filter.getAddedAtFrom()));
+            } else if (filter.getAddedAtTo() != null) {
+                query.addCriteria(Criteria.where("addedAt").lte(filter.getAddedAtTo()));
+            }
+        }
+
+        if (filter.getPriceFrom() != null && filter.getPriceTo() != null) {
+            query.addCriteria(Criteria.where("salePrice")
+                    .gte(filter.getPriceFrom())
+                    .lte(filter.getPriceTo()));
+        } else {
+            if (filter.getPriceFrom() != null) {
+                query.addCriteria(Criteria.where("salePrice").gte(filter.getPriceFrom()));
+            } else if (filter.getPriceTo() != null) {
+                query.addCriteria(Criteria.where("salePrice").lte(filter.getPriceTo()));
+            }
+        }
+
+        if (filter.getHasDiscount() != null) {
+            if (filter.getHasDiscount()) {
+                query.addCriteria(AggregationExpressionCriteria.whereExpr(
+                        ComparisonOperators.valueOf("$salePrice").lessThan("$regularPrice")
+                ));
+            } else {
+                query.addCriteria(AggregationExpressionCriteria.whereExpr(
+                        ComparisonOperators.valueOf("$salePrice").equalTo("$regularPrice")
+                ));
+            }
+        }
+
+        if (filter.getInStock() != null) {
+            if (filter.getInStock()) {
+                query.addCriteria(Criteria.where("quantityInStock").gt(0));
+            } else {
+                query.addCriteria(Criteria.where("quantityInStock").is(0));
+            }
+        }
+
+        if (filter.getCategoriesId() != null && filter.getCategoriesId().length > 0) {
+            query.addCriteria(Criteria.where("categoryId").in(
+                    (Object[]) filter.getCategoriesId()
+            ));
+        }
+
+        if (StringUtils.isNoneBlank(filter.getTerm())) {
+            final String regexExpression = String.format(findWordRegex, filter.getTerm());
+            query.addCriteria(
+                    new Criteria().orOperator(
+                            Criteria.where("name").regex(regexExpression),
+                            Criteria.where("brand").regex(regexExpression),
+                            Criteria.where("description").regex(regexExpression)
+                    )
+            );
+        }
+
+        return query;
     }
 }
