@@ -30,7 +30,7 @@ public class CategoryBase {
     private CategoryQueryService categoryQueryService;
 
     @MockitoBean
-    private CategoryManagementApplicationService categoryManagementService;
+    private CategoryManagementApplicationService categoryManagementApplicationService;
 
     public static final UUID validCategoryId = UUID.fromString("f5ab7a1e-37da-41e1-892b-a1d38275c2f2");
 
@@ -43,7 +43,7 @@ public class CategoryBase {
 
         RestAssuredMockMvc.enableLoggingOfRequestAndResponseIfValidationFails();
 
-        Mockito.when(categoryQueryService.filter(Mockito.anyInt(), Mockito.anyInt()))
+        Mockito.when(categoryQueryService.filter(Mockito.any()))
                 .then((answer)-> {
                     Integer size = answer.getArgument(0);
                     return PageModel.<CategoryDetailOutput>builder()
@@ -62,7 +62,7 @@ public class CategoryBase {
         Mockito.when(categoryQueryService.findById(validCategoryId))
                 .thenReturn(CategoryOutputTestDataBuilder.aCategory().id(validCategoryId).build());
 
-        Mockito.when(categoryManagementService.create(Mockito.any(CategoryInput.class)))
+        Mockito.when(categoryManagementApplicationService.create(Mockito.any(CategoryInput.class)))
                 .thenReturn(createdCategoryId);
 
         Mockito.when(categoryQueryService.findById(createdCategoryId))

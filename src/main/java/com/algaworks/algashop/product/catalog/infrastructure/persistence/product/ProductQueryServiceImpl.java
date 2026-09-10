@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationExpressionCr
 import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.TextCriteria;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -72,6 +73,10 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     private Sort sortWith(final ProductFilter filter) {
+        if (StringUtils.isNoneBlank(filter.getTerm())) {
+            return Sort.by("score");
+        }
+
         return Sort.by(filter.getSortDirectionOrDefault(), filter.getSortByPropertyOrDefault().getPropertyName());
     }
 
@@ -135,13 +140,9 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         }
 
         if (StringUtils.isNoneBlank(filter.getTerm())) {
-            final String regexExpression = String.format(findWordRegex, filter.getTerm());
             query.addCriteria(
-                    new Criteria().orOperator(
-                            Criteria.where("name").regex(regexExpression),
-                            Criteria.where("brand").regex(regexExpression),
-                            Criteria.where("description").regex(regexExpression)
-                    )
+                    TextCriteria.forDefaultLanguage()
+                            .matching(filter.getTerm())
             );
         }
 
