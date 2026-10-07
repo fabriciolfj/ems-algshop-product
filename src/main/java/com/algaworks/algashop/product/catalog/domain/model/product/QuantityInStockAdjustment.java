@@ -4,6 +4,12 @@ import java.util.UUID;
 
 public interface QuantityInStockAdjustment {
 
-    void increase(final UUID productId, int quantity);
-    void decrease(final UUID productId, int quantity);
+    Result increase(final UUID productId, int quantity);
+    Result decrease(final UUID productId, int quantity);
+
+    record Result(
+            UUID productId,
+            int previousQuantity,
+            int newQuantity
+    ) {}
 }
