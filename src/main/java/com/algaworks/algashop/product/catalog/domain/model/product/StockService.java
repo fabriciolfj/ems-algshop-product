@@ -24,7 +24,7 @@ public class StockService {
         try {
             result = quantityInStockAdjustment.increase(product.getId(), quantity);
         } catch (Exception e) {
-            throw new DomainException(String.format("failed to updated product %s stock", product.getId()));
+            throw new DomainException(String.format("failed to restock product %s stock", product.getId()));
         }
 
         if (result.inRestocked()) {
@@ -47,7 +47,7 @@ public class StockService {
         try {
             result = quantityInStockAdjustment.decrease(product.getId(), quantity);
         } catch (Exception e) {
-            throw new DomainException(String.format("failed to updated product %s stock", product.getId()));
+            throw new DomainException(String.format("failed to withdraw product %s stock", product.getId()));
         }
 
         if (result.isOutOfStock()) {
