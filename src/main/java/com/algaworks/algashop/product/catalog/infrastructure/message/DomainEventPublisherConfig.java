@@ -1,0 +1,15 @@
+package com.algaworks.algashop.product.catalog.infrastructure.message;
+
+import com.algaworks.algashop.product.catalog.domain.model.product.DomainEventPublisher;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DomainEventPublisherConfig {
+
+    @Bean
+    public DomainEventPublisher domainEventPublisher(final ApplicationEventPublisher publisher) {
+        return publisher::publishEvent;
+    }
+}
