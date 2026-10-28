@@ -8,7 +8,7 @@ spring:
       host: localhost
       password: algashop
       database: 0
-      timeout: 600
+      timeout: 20
 
 logging:
   level:
