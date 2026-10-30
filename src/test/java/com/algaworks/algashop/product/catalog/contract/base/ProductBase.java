@@ -111,4 +111,9 @@ public class ProductBase {
                 .thenReturn(ProductDetailOutputTestDataBuilder.aProduct().id(validProductId).build());
     }
 
+    private void mockValidProductUpdate() {
+        Mockito.when(productManagementApplicationService.update(Mockito.any(UUID.class), Mockito.any(ProductInput.class)))
+                .thenReturn(ProductDetailOutputTestDataBuilder.aProduct().id(validProductId).build());
+    }
+
 }
