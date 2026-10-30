@@ -40,6 +40,13 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailOutput> findById(@PathVariable final UUID productId) {
         final var product = productQueryService.findById(productId);
+        if (Math.random() < 0.5) {
+            try {
+                Thread.sleep(Duration.ofSeconds(20));
+            } catch (Exception e) {
+
+            }
+        }
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl
