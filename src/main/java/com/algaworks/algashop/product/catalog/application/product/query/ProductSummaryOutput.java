@@ -29,6 +29,7 @@ public class ProductSummaryOutput {
     private Integer quantityInStock;
     private Integer discountPercentageRounded;
     private Float score;
+    private ImageOutput mainImage;
 
     public String getSlug() {
         return Slugfier.slugify(this.getName());
