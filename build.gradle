@@ -34,6 +34,7 @@ publishing {
 ext {
 	set('springCloudVersion', "2025.1.0")
 	set('snippetsDir', file("build/generated-snippets"))
+	set('springCloudAwsVersion', "4.0.0")
 }
 
 configurations {
@@ -45,6 +46,8 @@ configurations {
 }
 
 dependencies {
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}")
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'

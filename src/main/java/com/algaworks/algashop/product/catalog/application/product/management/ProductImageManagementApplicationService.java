@@ -32,7 +32,7 @@ public class ProductImageManagementApplicationService {
 
         Product product = findById(productId);
 
-        if (storageProvider.fileExists(imageInput.getRemoteFileName())) {
+        if (!storageProvider.fileExists(imageInput.getRemoteFileName())) {
             throw new DomainException("image of name %s was not found on storage provider"
                     .formatted(imageInput.getRemoteFileName()));
         }

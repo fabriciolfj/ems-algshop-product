@@ -4,6 +4,8 @@ import java.net.URL;
 
 public interface StorageProvider {
 
+    boolean healthCheck();
+
     URL requestUploadUrl(final FileReference fileReference);
 
     void deleteFile(final String remoteFileName);
